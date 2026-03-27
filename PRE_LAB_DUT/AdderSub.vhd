@@ -8,7 +8,7 @@ entity adder_subtractor is
     port (
         X        : in  std_logic_vector(n-1 downto 0);
         Y        : in  std_logic_vector(n-1 downto 0);
-        sub_flag : in  std_logic;
+        alufa    : in  std_logic_vector(2 downto 0 );
         res      : out std_logic_vector(n-1 downto 0);
         cout     : out std_logic  
     );
