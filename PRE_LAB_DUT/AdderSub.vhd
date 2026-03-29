@@ -3,55 +3,90 @@ USE ieee.std_logic_1164.all;
 USE ieee.std_logic_arith.all;
 USE ieee.std_logic_unsigned.all;
 --------------------------------------------
-entity adder_subtractor is
-    generic ( n : integer := 8 );
-    port (
-        X        : in  std_logic_vector(n-1 downto 0);
-        Y        : in  std_logic_vector(n-1 downto 0);
-        alufa    : in  std_logic_vector(2 downto 0 );
-        res      : out std_logic_vector(n-1 downto 0);
-        cout     : out std_logic  
+ENTITY adder_subtractor IS
+    GENERIC ( n : INTEGER := 8 );
+    PORT (
+        X     : IN  STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+        Y     : IN  STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+        alufn : IN  STD_LOGIC_VECTOR(2 DOWNTO 0);
+        res   : OUT STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+        cout  : OUT STD_LOGIC
     );
-end adder_subtractor;
+END adder_subtractor;
 ------------------------------------------------
-architecture Structural of adder_subtractor is
+ARCHITECTURE Structural OF adder_subtractor IS
 
-    component FA is
-        port (
-            a    : in  std_logic;
-            b    : in  std_logic;
-            cin  : in  std_logic;
-            s    : out std_logic;
-            cout : out std_logic
+    COMPONENT FA IS
+        PORT (
+            a    : IN  STD_LOGIC;
+            b    : IN  STD_LOGIC;
+            cin  : IN  STD_LOGIC;
+            s    : OUT STD_LOGIC;
+            cout : OUT STD_LOGIC
         );
-    end component;
+    END COMPONENT;
 
-signal reg : std_logic_vector (n-1 downto 0 ) ;
-signal X_XOR : std_logic_vector (n-1 downto 0 ) ;
+    SIGNAL carry    : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+    SIGNAL A_in     : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+    SIGNAL B_in     : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+    SIGNAL A_mod    : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+    SIGNAL sub_flag : STD_LOGIC;
+    SIGNAL const2   : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+    SIGNAL zeros    : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
 
-begin   
-	X_XOR(0) <= x(0) xor sub_flag;
+begin
+   
+	const2 <= (1 => '1', OTHERS => '0');   -- "00...010" the +2 constant 
+    zeros  <= (OTHERS => '0');              -- "00...000" the zero ustput
+	---
+	WITH alufn SELECT
+        A_in <= X      WHEN "000",   ---- Y + X ----
+                X      WHEN "001",   ---- Y - X ----
+                X      WHEN "010",   ---- neg(X) ----
+                const2 WHEN "011",   ---- Y + 2 ----
+                const2 WHEN "100",   ---- Y - 2 ----
+                zeros  WHEN OTHERS;
+	---
+	WITH alufn SELECT
+        B_in <= Y     WHEN "000",    ---- Y + X ----
+                Y     WHEN "001",    ---- Y - X ----
+                zeros WHEN "010",    ---- neg(X) => 0 - X  ----
+                Y     WHEN "011",    ---- Y + 2 ----
+                Y     WHEN "100",    ---- Y - 2 ----
+                zeros WHEN OTHERS;
+	---
+    WITH alufn SELECT
+        sub_flag <= '0' WHEN "000",  ---- addition ----
+                    '1' WHEN "001",  ---- subtraction ----
+                    '1' WHEN "010",  ---- negation (0 - X) ----
+                    '0' WHEN "011",  ---- addition ----
+                    '1' WHEN "100",  ---- subtraction ----
+                    '0' WHEN OTHERS;
+	---
+	GEN_XOR: FOR i IN 0 TO n-1 GENERATE
+        A_mod(i) <= A_in(i) XOR sub_flag;
+    END GENERATE GEN_XOR;
+	---
 	
-    FA_0 : FA port map (
-        a    => X_XOR(0),
-        b    => Y(0),
-        cin  => sub_flag,    
+    FA_0: FA PORT MAP (
+        a    => A_mod(0),
+        b    => B_in(0),
+        cin  => sub_flag,
         s    => res(0),
-        cout => reg(0)         
+        cout => carry(0)
     );
-    
-    GEN_FA: for i in 1 to n-1 generate
-        X_XOR(i) <= x(i) xor sub_flag;
-        FA_loop : FA port map (
-            a    => X_XOR(i),
-            b    => Y(i),
-            cin  => reg(i-1),       
-            s    => res(i),
-            cout => reg(i)      
-        );
-      
-    end generate GEN_FA;
 	
-    c <= reg(n-1);
+    
+    GEN_FA: FOR i IN 1 TO n-1 GENERATE
+        FA_i: FA PORT MAP (
+            a    => A_mod(i),
+            b    => B_in(i),
+            cin  => carry(i-1),
+            s    => res(i),
+            cout => carry(i)
+        );
+    END GENERATE GEN_FA;
+	
+    cout <= carry(n-1);
 
 end Structural;
