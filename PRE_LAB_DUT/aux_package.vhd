@@ -1,40 +1,69 @@
 library IEEE;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
 
-package aux_package is
 --------------------------------------------------------
+package aux_package is
 	component top is
-	GENERIC (n : INTEGER := 8;
-		   k : integer := 3;   -- k=log2(n)
-		   m : integer := 4	); -- m=2^(k-1)
-	PORT 
-	(  
-		Y_i,X_i: IN STD_LOGIC_VECTOR (n-1 DOWNTO 0);
-		ALUFN_i : IN STD_LOGIC_VECTOR (4 DOWNTO 0);
-		ALUout_o: OUT STD_LOGIC_VECTOR(n-1 downto 0);
-		Nflag_o,Cflag_o,Zflag_o,Vflag_o: OUT STD_LOGIC 
-	); -- Zflag,Cflag,Nflag,Vflag
+		GENERIC (	n : INTEGER := 8;
+				k : integer := 3;   -- k=log2(n)
+				m : integer := 4	); -- m=2^(k-1)
+				
+		PORT (  Y_i,X_i: IN STD_LOGIC_VECTOR (n-1 DOWNTO 0);
+				ALUFN_i : IN STD_LOGIC_VECTOR (4 DOWNTO 0);
+				ALUout_o: OUT STD_LOGIC_VECTOR(n-1 downto 0);
+				Nflag_o,Cflag_o,Zflag_o,Vflag_o: OUT STD_LOGIC );
+				
 	end component;
+	
 ---------------------------------------------------------  
+
 	component FA is
-		PORT (xi, yi, cin: IN std_logic;
-			      s, cout: OUT std_logic);
+		PORT (	xi, yi, cin: IN std_logic;
+			     s, cout: OUT std_logic);
+				 
 	end component;
+	
 ---------------------------------------------------------	
+
+	component AdderSub is 
+		generic (n : integer := 0);
+		
+		port (  x,y :in std_logic_vector(n-1 downto 0);
+				sub_cont : in std_logic;
+				res_out_Adder : OUT std_logic_vector(n-1 downto 0);
+				c_out_Adder : out std_logic);
+				
+	end component;
 	
+---------------------------------------------------------
+
+	component Shifter is
+		GENERIC ( n : INTEGER := 8;
+				k : INTEGER := 3);
+				
+		port (	y     : IN  STD_LOGIC_VECTOR(n-1 DOWNTO 0);  
+				x     : IN  STD_LOGIC_VECTOR(k-1 DOWNTO 0);  
+				alufn : IN  STD_LOGIC_VECTOR(2 DOWNTO 0);    
+				res   : OUT STD_LOGIC_VECTOR(n-1 DOWNTO 0);  
+				cout  : OUT STD_LOGIC );
+				
+	end component;
 	
+---------------------------------------------------------
+
+	component Logic is
+		generic (n : integer :=8); 
+		port (	 x, y : in std_logic_vector (n-1 downto 0) ;
+				alufn : in std_logic_vector (2 downto 0); 
+				z : out std_logic_vector (n-1 downto 0) );
+			 
+	end component;
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+----------------------------------------------------------
 	
 	
 end aux_package;
+
 
