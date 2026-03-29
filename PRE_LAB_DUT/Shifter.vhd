@@ -1,48 +1,74 @@
 LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 --------------------------------------
-entity shifter is 
-	generic ( n : integer := 8 ;
-	K : integer:= 3);
-	
-	post (
-		y : IN std_logic_vector(n-1 downto 0 ) ;
-		X_SELECT: in std_logic_vector (k-1 downto 0);
-		alufn : in std_logic_vecyrt(2 downto 0);
-		res : out std_logic_vector(n-1 downto 0 );
-		cout: out std_logic
-		);
-		
-end entity
--------------------------------------------------
-architecture shifter of shifter is 
-	subtype vector is sdt_logic_vector (n-1 downto 0);
-	type matrix is array (k-1 downto 0) of vector;
-	signal stages: matrix;
-	signal chack_alufn : std_logic_vector(2 downto 0);
-	signal carries : std_logic_vector(k downto 0);
+ENTITY shifter IS
+    GENERIC ( n : INTEGER := 8;
+              k : INTEGER := 3);   -- k = log2(n)
+    PORT (
+        y     : IN  STD_LOGIC_VECTOR(n-1 DOWNTO 0);  -- data to shift
+        x     : IN  STD_LOGIC_VECTOR(k-1 DOWNTO 0);  -- shift amount (from X(k-1..0))
+        alufn : IN  STD_LOGIC_VECTOR(2 DOWNTO 0);    -- alufn(0) = dir: '0'=SHL, '1'=SHR
+        res   : OUT STD_LOGIC_VECTOR(n-1 DOWNTO 0);  -- shifted result
+        cout  : OUT STD_LOGIC                         -- carry out
+    );
+END shifter;
+----------------------------------------------
+ARCHITECTURE dfl OF shifter IS
 
-else res <= (others => '0') ;
+    -- internal types for the barrel-shifter matrix
+    SUBTYPE vector IS STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+    TYPE    matrix IS ARRAY (k DOWNTO 0) OF vector;
 
-begin
-	chack_alufn <= alufn ;
-	stages(0)  <= y;
+    SIGNAL stages  : matrix;                          -- k+1 rows: stage 0..k
+    SIGNAL carries : STD_LOGIC_VECTOR(k DOWNTO 0);   -- carry chain
+    SIGNAL dir     : STD_LOGIC;                       -- direction bit
+
+BEGIN
+
+    -------------------------------------------------------
+    -- 1. Extract the direction bit from alufn(0)
+    -------------------------------------------------------
+    dir <= alufn(0);
+
+    -------------------------------------------------------
+    -- 2. Stage 0: load the input data
+    -------------------------------------------------------
+    stages(0)  <= y;
     carries(0) <= '0';
 
-	shifter_gen: for i in 0 to k-1 generate
-        
-        stages(i+1) <= stages(i) when x_control(i) = '0'
-						else ( stages(i)((n-1-2**i) downto 0) & ( (2**i)-1 downto 0 => '0' ) when dir = '0' ---- stage(i) & 0..0
-						else ( ( (2**i)-1 downto 0 => '0' )   &  ( stages(i)(n-1 downto 2**i))) ---- 0..0 & stage(i)
+    -------------------------------------------------------
+    -- 3. Barrel-shifter core: k stages, each shifts by 2^i
+    --    Each stage is a row of n 2-to-1 MUXes
+    -------------------------------------------------------
+    shifter_gen : FOR i IN 0 TO k-1 GENERATE
 
+        -- Data path: pass-through / shift-left / shift-right
+        stages(i+1) <= stages(i)
+                           WHEN x(i) = '0'
+                       ELSE stages(i)(n-1-2**i DOWNTO 0) & (2**i-1 DOWNTO 0 => '0')
+                           WHEN dir = '0'
+                       ELSE (2**i-1 DOWNTO 0 => '0') & stages(i)(n-1 DOWNTO 2**i);
 
-        carries(i+1) <= stages(i)((2**i)-1) 
-                        when x_control(i) = '1' 
-                        else carries(i);
-    end generate;
+        -- Carry: capture the bit at the shifting boundary
+        --   SHL: the MSB side bit that is shifted out
+        --   SHR: the LSB side bit that is shifted out
+        carries(i+1) <= carries(i)
+                            WHEN x(i) = '0'
+                        ELSE stages(i)(n-2**i)
+                            WHEN dir = '0'
+                        ELSE stages(i)(2**i-1);
 
-	res  <= stages(k);
-    cout <= carries(k);
+    END GENERATE;
 
-end architecture;
+    -------------------------------------------------------
+    -- 4. Output gating: zero for undefined alufn values
+    --    Only "000" (SHL) and "001" (SHR) are valid
+    -------------------------------------------------------
+    res  <= stages(k)  WHEN (alufn = "000" OR alufn = "001")
+            ELSE (OTHERS => '0');
+
+    cout <= carries(k) WHEN (alufn = "000" OR alufn = "001")
+            ELSE '0';
+
+END ARCHITECTURE dfl;
  
