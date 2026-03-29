@@ -2,6 +2,7 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.all;
 USE ieee.std_logic_arith.all;
 USE ieee.std_logic_unsigned.all;
+USE work.aux_package.all;
 --------------------------------------------
 ENTITY adder_subtractor IS
     GENERIC ( n : INTEGER := 8 );
@@ -15,16 +16,6 @@ ENTITY adder_subtractor IS
 END adder_subtractor;
 ------------------------------------------------
 ARCHITECTURE Structural OF adder_subtractor IS
-
-    COMPONENT FA IS
-        PORT (
-            a    : IN  STD_LOGIC;
-            b    : IN  STD_LOGIC;
-            cin  : IN  STD_LOGIC;
-            s    : OUT STD_LOGIC;
-            cout : OUT STD_LOGIC
-        );
-    END COMPONENT;
 
     SIGNAL carry    : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
     SIGNAL A_in     : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
