@@ -26,20 +26,14 @@ ARCHITECTURE dfl OF shifter IS
 BEGIN
 
     -------------------------------------------------------
-    -- 1. Extract the direction bit from alufn(0)
+    --  Extract the direction bit from alufn(0) --
     -------------------------------------------------------
     dir <= alufn(0);
-
-    -------------------------------------------------------
-    -- 2. Stage 0: load the input data
-    -------------------------------------------------------
     stages(0)  <= y;
     carries(0) <= '0';
 
     -------------------------------------------------------
-    -- 3. Barrel-shifter core: k stages, each shifts by 2^i
-    --    Each stage is a row of n 2-to-1 MUXes
-    -------------------------------------------------------
+    
     shifter_gen : FOR i IN 0 TO k-1 GENERATE
 
         -- Data path: pass-through / shift-left / shift-right
@@ -50,8 +44,7 @@ BEGIN
                        ELSE (2**i-1 DOWNTO 0 => '0') & stages(i)(n-1 DOWNTO 2**i);
 
         -- Carry: capture the bit at the shifting boundary
-        --   SHL: the MSB side bit that is shifted out
-        --   SHR: the LSB side bit that is shifted out
+        
         carries(i+1) <= carries(i)
                             WHEN x(i) = '0'
                         ELSE stages(i)(n-2**i)
@@ -61,9 +54,7 @@ BEGIN
     END GENERATE;
 
     -------------------------------------------------------
-    -- 4. Output gating: zero for undefined alufn values
-    --    Only "000" (SHL) and "001" (SHR) are valid
-    -------------------------------------------------------
+    
     res  <= stages(k)  WHEN (alufn = "000" OR alufn = "001")
             ELSE (OTHERS => '0');
 
@@ -71,4 +62,3 @@ BEGIN
             ELSE '0';
 
 END ARCHITECTURE dfl;
- 
