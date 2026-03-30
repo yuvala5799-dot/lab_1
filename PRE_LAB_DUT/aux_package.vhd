@@ -5,10 +5,10 @@ use ieee.std_logic_unsigned.all;
 
 --------------------------------------------------------
 package aux_package is
-	component top is
+	component top_entity is
 		GENERIC (	n : INTEGER := 8;
-				k : integer := 3;   -- k=log2(n)
-				m : integer := 4	); -- m=2^(k-1)
+					k : integer := 3 );   -- k=log2(n)
+				
 				
 		PORT (  Y_i,X_i: IN STD_LOGIC_VECTOR (n-1 DOWNTO 0);
 				ALUFN_i : IN STD_LOGIC_VECTOR (4 DOWNTO 0);
@@ -27,13 +27,15 @@ package aux_package is
 	
 ---------------------------------------------------------	
 
-	component AdderSub is 
-		generic (n : integer := 0);
-		
-		port (  x,y :in std_logic_vector(n-1 downto 0);
-				sub_cont : in std_logic;
-				res_out_Adder : OUT std_logic_vector(n-1 downto 0);
-				c_out_Adder : out std_logic);
+	component adder_subtractor  is 
+		GENERIC ( n : INTEGER := 8 );
+		PORT (
+			X     : IN  STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+			Y     : IN  STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+			alufn : IN  STD_LOGIC_VECTOR(2 DOWNTO 0);
+			res   : OUT STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+			cout  : OUT STD_LOGIC);
+    
 				
 	end component;
 	
@@ -65,5 +67,6 @@ package aux_package is
 	
 	
 end aux_package;
+
 
 
