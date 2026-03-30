@@ -21,6 +21,7 @@ ARCHITECTURE Structural OF adder_subtractor IS
     SIGNAL A_in     : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
     SIGNAL B_in     : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
     SIGNAL A_mod    : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
+	signal the_res  : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
     SIGNAL sub_flag : STD_LOGIC;
     SIGNAL const2   : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
     SIGNAL zeros    : STD_LOGIC_VECTOR(n-1 DOWNTO 0);
@@ -60,24 +61,26 @@ begin
 	---
 	
     FA_0: FA PORT MAP (
-        a    => A_mod(0),
-        b    => B_in(0),
-        cin  => sub_flag,
-        s    => res(0),
-        cout => carry(0)
-    );
+			xi   => A_mod(0),
+			yi   => B_in(0),
+			cin  => sub_flag,
+			s    => the_res(0),
+			cout => carry(0)
+);
+   
 	
     
     GEN_FA: FOR i IN 1 TO n-1 GENERATE
-        FA_i: FA PORT MAP (
-            a    => A_mod(i),
-            b    => B_in(i),
-            cin  => carry(i-1),
-            s    => res(i),
-            cout => carry(i)
-        );
-    END GENERATE GEN_FA;
+		FA_i: FA PORT MAP (
+			xi   => A_mod(i),
+			yi   => B_in(i),
+			cin  => carry(i-1),
+			s    => the_res(i),
+			cout => carry(i)
+		);
+	END GENERATE GEN_FA;
+  
 	
     cout <= carry(n-1);
-
+	res <= the_res ;
 end Structural;
